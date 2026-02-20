@@ -5,23 +5,53 @@ const axios = require("axios");
 const app = express();
 app.use(bodyParser.json());
 
+const ACCESS_TOKEN = "DÁN_ACCESS_TOKEN_OA_VÀO_ĐÂY";
+
 app.get("/", (req, res) => {
-  res.send("Zalo Bot đang chạy 😎");
+  res.send("Zalo Bot đang chạy 😡");
 });
 
-// Webhook nhận dữ liệu từ Zalo
+// Webhook Zalo OA
 app.post("/webhook", async (req, res) => {
   console.log("DATA NHẬN:", req.body);
 
-  // Ví dụ: nếu ai gửi chữ "ping" thì bot trả lời "pong"
-  if (req.body.message && req.body.message.text === "ping") {
-    console.log("Có người gửi ping 👀");
-  }
+  try {
+    const event = req.body;
 
-  res.sendStatus(200);
+    // Kiểm tra có phải event người dùng gửi tin nhắn không
+    if (event.event_name === "user_send_text") {
+      const senderId = event.sender.id;
+      const userMessage = event.message.text;
+
+      if (userMessage.toLowerCase() === "ping") {
+        await axios.post(
+          "https://openapi.zalo.me/v3.0/oa/message/cs", 
+          {
+            recipient: {
+              user_id: senderId,
+            },
+            message: {
+              text: "Ponggg 🏓 Zalo bot chạy rồi ccho 😡",
+            },
+          },
+          {
+            headers: {
+              access_token: ACCESS_TOKEN,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+    }
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error("Lỗi:", error.response?.data || error.message);
+    res.sendStatus(500);
+  }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log("Bot chạy cổng " + PORT);
+  console.log("Server chạy cổng", PORT);
 });
